@@ -1,0 +1,41 @@
+import { Button, VerticalBox, HorizontalBox, LineEdit, Spinner } from "std-widgets.slint";
+
+component TwoFactorAuthPage {
+    preferred-width: 1920px;
+    preferred-height: 1080px;
+
+    // Property to track 2FA status
+    property <string> auth_status: "Waiting for confirmation on your phone...";
+
+    VerticalBox {
+        alignment: center;
+        spacing: 20px;
+        padding: 20px;
+
+        Text {
+            text: "2-Factor Authentication";
+            font-size: 24px;
+            horizontal-alignment: center;
+            color: #86c3ff;
+        }
+
+        Text {
+            text: "Please confirm authentication on your phone.";
+            font-size: 20px;
+            horizontal-alignment: center;
+            color: #86c3ff;
+        }
+
+        Text {
+            text: auth_status;
+            font-size: 18px;
+            horizontal-alignment: center;
+            color: #ffffff;
+        }
+
+        Spinner {
+            width: 50px;
+            height: 50px;
+        }
+    }
+}

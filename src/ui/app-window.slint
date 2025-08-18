@@ -1,0 +1,430 @@
+import { Button, VerticalBox, HorizontalBox, LineEdit, Spinner, ComboBox, ListView, CheckBox, GridBox} from "std-widgets.slint";
+
+export enum Pages{
+    Login,
+    Registration,
+    TimeTable
+}
+
+export component App inherits Window {
+    // Shared properties and callbacks
+    callback handle-login(string, string);
+    callback upgrade;
+    callback init-reg(string, string);
+    callback get-prev-schedule();
+    callback get-next-schedule();
+    callback term-selected(string);
+    in-out property <bool> is_loading: false;
+    in-out property <string> message: "";
+    in-out property <[string]> available_terms: [];
+    in-out property <string> student_id: "";
+    in-out property <string> password: "";
+    in-out property <Pages> current-page: Pages.Login;
+    out property <string> selected_term: "";
+    in-out property <[string]> selected_courses: [];
+    in property <[string]> current_timetable;
+
+    // --- Login Page ---
+    LoginPage := Rectangle {
+        background: transparent;
+        width: 100%;
+        height: 100%;
+        visible: Pages.Login == current_page;
+
+        Image {
+            source: @image-url("background.jpg");
+            width: parent.width;
+            height: parent.height;
+            image-fit: fill;
+            image-rendering: pixelated;
+            colorize: #00000000;
+            opacity: 0.8;
+        }
+
+        VerticalBox {
+            spacing: 20px;
+            padding: 20px;
+            height: 100%;
+
+            HorizontalBox {
+                alignment: center;
+                spacing: 40px;
+                padding: 40px;
+
+                VerticalBox {
+                    width: 400px;
+                    spacing: 20px;
+                    alignment: center;
+                    
+                    Text {
+                        text: "CUSIS Course Scheduler";
+                        font-size: 24px;
+                        horizontal-alignment: center;
+                        font-italic: true;
+                        font-family: "Arial";
+                        color: #fdfdfd;
+                    }
+                    Rectangle {
+                        background: black;
+                        opacity: 0.8;
+                        width: 370px;
+                        LineEdit {
+                        placeholder-text: "Enter Student ID";
+                        text <=> student_id;
+                        width: 370px;
+                        font-size: 17px;
+                        }
+                    }
+                    Rectangle {
+                        background: black;
+                        opacity: 0.8;
+                        width: 370px;
+                        LineEdit {
+                            placeholder-text: "Enter Password";
+                            text <=> password;
+                            width: 370px;
+                            font-size: 17px;
+                            input-type: InputType.password;
+                        }
+                    }
+
+                    if message != "": Text {
+                        text: message;
+                        font-size: 13px;
+                        font-weight: 500;
+                        color: #f0f0f0;
+                        wrap: word-wrap;
+                        horizontal-alignment: center;
+                    }
+
+                    Spinner {
+                        visible: root.is_loading;
+                        width: 32px;
+                        height: 32px;
+                        indeterminate: true;
+                    }
+                    Rectangle {
+                        background: black;
+                        width: 100px;
+                        opacity: 0.8;
+                        Button {
+                            text: "Login";
+                            enabled: !root.is_loading;
+                            padding-top: 10px;
+                            width: 100px;
+                            clicked => {
+                                if (student_id != "" && password != "") {
+                                    handle-login(student_id, password);
+                                    root.is_loading = true;
+                                    message = root.message;
+                                }
+                                else{
+                                    message = "Empty student Id or password!";
+                                }
+                                
+                            }
+                        }
+                    }
+                    
+                }
+            }
+
+        }
+    }
+
+    // --- Registration Page ---
+    RegistrationPage := Rectangle {
+        visible: Pages.Registration == current_page;
+        padding: 20px;
+        width: 100%;
+        height: 100%;
+
+        property <[string]> selected_courses: [];
+        property <string> courses_to_be_registrated: "";
+        property <string> day_off_preference: "None";
+        property <string> specific_day_off: "";
+        property <bool> any_day_off_checked: false;
+        property <bool> is_specific_day_off: false;
+        in-out property <string> reg_message: "";
+        
+        
+        Rectangle {
+            background: #151515;
+            width: 100%;
+            height: 100%;
+
+            VerticalBox {
+                alignment: center;
+                spacing: 40px;
+                padding: 60px;
+
+                // Term Selection
+                VerticalBox {
+                    spacing: 10px;
+                    alignment: center;
+                    Text {
+                        text: "Select Term";
+                        font-size: 20px;
+                        horizontal-alignment: center;
+                        color: #ffffff;
+                    }
+                    ComboBox {
+                        model: root.available_terms;
+                        current-value <=> selected_term;
+                        width: 50%;
+                        selected(current-value) => {
+                            term-selected(current-value);
+                        }
+                    }
+                }
+
+                // Course Registration
+                VerticalBox {
+                    spacing: 10px;
+                    Text {
+                        text: "Add Courses";
+                        font-size: 20px;
+                        horizontal-alignment: center;
+                        color: #ffffff;
+                    }
+                    HorizontalBox {
+                        alignment: LayoutAlignment.center;
+                        spacing: 10px;
+                        LineEdit {
+                            placeholder-text: "Enter course codes spearated by spaces";
+                            text <=> courses_to_be_registrated;
+                            width: 500px;
+                            font-size: 15px;
+                        }
+                        
+                    }
+                }
+
+                // Day-Off Preferences
+                VerticalBox {
+                    spacing: 10px;
+                    alignment: LayoutAlignment.center;
+                    Text {
+                        text: "Day-Off Preferences";
+                        font-size: 20px;
+                        horizontal-alignment: center;
+                        color: #ffffff;
+                    }
+                    CheckBox {
+                        checked <=> any_day_off_checked;
+                        text: "Any Day Off";
+                        toggled => {
+                            if (self.checked) {
+                                any_day_off_checked = true;
+                                is_specific_day_off = false;
+                                day_off_preference = "Any";
+                                specific_day_off = "";
+                            } else {
+                                day_off_preference = "None";
+                            }
+                        }
+                        }
+                        CheckBox {
+                            checked <=> is_specific_day_off;
+                            text: "Specific Day Off";
+                            toggled => {
+                                if (self.checked) {
+                                    is_specific_day_off = true;
+                                    any_day_off_checked = false;
+                                    day_off_preference = "Specific";
+                                } else {
+                                    day_off_preference = "None";
+                                }
+                            }
+                        }
+                        if (day_off_preference == "Specific"): ComboBox {
+                            model: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+                            current-value <=> specific_day_off;
+                            current-index: 0;
+                        }
+                }
+                Rectangle {
+                    Rectangle {
+                    Button {
+                        text: "Schedule Courses";
+                        width: 20%;
+                        enabled: !root.is_loading;
+                        clicked => {
+                            reg_message = "";
+                            if (courses_to_be_registrated != "" && selected_term != "") {
+                                if (any_day_off_checked){
+                                    init-reg(courses_to_be_registrated, "Any");
+                                    root.is_loading = true;
+                                }
+                                else if (is_specific_day_off) {
+                                    init-reg(courses_to_be_registrated, specific_day_off);
+                                    root.is_loading = true;
+                                }
+                                else{
+                                   reg_message = "Please select a day off preference!";
+                                }
+                                debug("Courses to be registered: " + courses_to_be_registrated  + " in " + selected_term);
+                            }
+                            else{
+                                reg_message = "Empty course codes or term!";
+                            }
+                        }
+                        
+                    }
+                        
+                    }
+                    Spinner {
+                            visible: root.is_loading;
+                            width: 32px;
+                            height: 32px;
+                            indeterminate: true;
+                    }
+                    
+                
+                }
+                
+                if reg_message != "": Text {
+                        text: reg_message;
+                        font-size: 14px;
+                        color: #f0f0f0;
+                        horizontal-alignment: center;
+                        vertical-alignment: bottom;
+                }
+            }
+        }
+    }
+    TimetablePage := Rectangle {
+        width: 100%;
+        height: 100%;
+        visible: Pages.TimeTable == current_page;
+        background: #454545;
+        in-out property <int> current_timetable_index: 0;
+        private property <brush> piece-background-1: #abec51;
+        private property <brush> piece-background-2: #5c95ea;
+        private property <color> piece-text-color-1: #050505;
+        private property <color> piece-text-color-2: #ffffff;
+        private property <color> game-text-color: #faf6f6;
+        private property <color> game-highlight-color: #1d6aaa;
+        in-out property <[[string]]> timetable_data: [["CSCI3100 /n 1030 - 1230", "CSCI3300 /n 1230 - 1430"], ["Tue", "CSCI3200", "1030:1230"]];
+        in-out property <[string]> course_strings : ["CI3100 \n 10:30-12:30", "CSCI3200 \n 9:30-12:30", "CSCI3200 \n 10:30-12:30"];
+
+        HorizontalBox {
+            width: 100%; 
+            height: 100%;
+            alignment: LayoutAlignment.center;
+            GridLayout {
+                Rectangle {
+                    width: 150px;
+                    height: 50px;
+                    background: #43689e;
+                    Text { text: "Mon";  color: game-text-color; font-size: 14pt; font-weight: 700; horizontal-alignment: center; vertical-alignment: center; }
+                }
+                Rectangle {
+                    width: 150px;
+                    height: 50px;
+                    background: #43689e;
+                    Text { text: "Tue";  color: game-text-color; font-size: 14pt; font-weight: 700; horizontal-alignment: center; vertical-alignment: center; }
+                }
+                Rectangle {
+                    width: 150px;
+                    height: 50px;
+                    background: #43689e;
+                    Text { text: "Wed";  color: game-text-color; font-size: 14pt; font-weight: 700; horizontal-alignment: center; vertical-alignment: center; }
+                }
+                Rectangle {
+                    width: 150px;
+                    height: 50px;
+                    background: #43689e;
+                    Text { text: "Thu";  color: game-text-color; font-size: 14pt; font-weight: 700; horizontal-alignment: center; vertical-alignment: center; }
+                }
+                Rectangle {
+                    width: 150px;
+                    height: 50px;
+                    background: #43689e;
+                    Text { text: "Fri";  color: game-text-color; font-size: 14pt; font-weight: 700; horizontal-alignment: center; vertical-alignment: center; }
+                }
+                Rectangle {
+                    width: 150px;
+                    height: 50px;
+                    background: #43689e;
+                    Text { text: "Sat";  color: game-text-color; font-size: 14pt; font-weight: 700; horizontal-alignment: center; vertical-alignment: center; }
+                }   
+            }
+        }
+        Rectangle{
+            width: 100%;
+            height: 100%;
+                for i in 84: Rectangle {
+                    width: 150px;
+                    height: 35px;
+                    x: mod(i, 6)* 150px + 10px;
+                    y: floor(i /6) * 35px + 60px;
+                    background:current_timetable[i]!= ""? #83cbf5:  #677af900;
+                    Text {
+                        text: current_timetable[i];
+                        vertical-alignment: center;
+                        horizontal-alignment: center;
+                        wrap: word-wrap;
+                        color: #0b0000;
+                        font-size: 8pt;
+                        font-weight: 700;
+                    }
+                    
+                }
+                Rectangle {
+                    width: 100%;
+                    y: 460px;
+                HorizontalBox {
+                    alignment: LayoutAlignment.center;
+                    height: 100%;
+                    width: 70%;
+                    // width: 50px;
+                    // height: 50px;
+                    
+                    Button {
+                        width: 100px;
+                        height: 50px;
+                        
+                        text: "←";
+                        enabled: current_timetable_index > 0;
+                        clicked => {
+                            get_prev_schedule();
+                            current_timetable_index -= 1;
+                        }
+                    }
+
+                    Button {
+                    width: 200px;
+                    height: 50px;
+                    text: "Add to Shopping Cart";
+                  
+                    clicked => {
+                        debug("Added timetable " + current_timetable_index + " to cart");
+                    }
+                    }
+
+                    Button {
+                        width: 100px;
+                        height: 50px;
+                        text: "→";
+                        enabled: current_timetable_index < timetable_data.length - 1;
+                        
+                        clicked => {
+                            get_next_schedule();
+                            current_timetable_index += 1;
+                        }
+                    }
+
+                }
+                
+            }
+            }
+            
+            
+        }
+        }
+    
+
+
+
+

@@ -1,0 +1,167 @@
+import { Button, VerticalBox, HorizontalBox, LineEdit, ComboBox, CheckBox, ListView } from "std-widgets.slint";
+
+export component RegistrationPage inherits Window {
+    preferred-width: 1920px;
+    preferred-height: 1080px;
+
+    Rectangle {
+        background: #242424;
+        width: 100%;
+        height: 100%; 
+
+        property <string> selected_term: "";
+        property <[string]> available_terms: ["Fall 2025", "Spring 2026"];
+        property <[string]> selected_courses: [];
+        property <string> new_course: "";
+        property <string> day_off_preference: "None";
+        property <string> specific_day_off: "";
+        property <bool> any_day_off_checked: false;
+        property <bool> is_specific_day_off: false;
+
+        // Callbacks
+        callback add-course(string);
+        callback edit-course(int, string); 
+        callback remove-course(int, string);
+
+        VerticalBox {
+            alignment: center;
+            spacing: 40px;
+            padding: 60px;
+
+            // Term Selection Section
+            VerticalBox {
+                spacing: 10px;
+                alignment: center;
+                Text {
+                    text: "Select Term";
+                    font-size: 20px;
+                    horizontal-alignment: center;
+                    color: #ffffff;
+                }
+                ComboBox {
+                    current-value <=> selected_term;
+                    width: 500px;
+
+                }
+            }
+            
+            
+            
+
+            // Course Registration Section
+            VerticalBox {
+                spacing: 10px;
+                Text {
+                    text: "Add Courses";
+                    font-size: 20px;
+                    horizontal-alignment: center;
+                    color: #ffffff;
+                }
+                HorizontalBox {
+                    spacing: 10px;
+                    LineEdit {
+                        placeholder-text: "Enter Course Name";
+                        text <=> new_course;
+                        width: 300px;
+                        font-size: 16px;
+                    }
+                    Button {
+                        text: "Add Course";
+                        width: 120px;
+                        clicked => {
+                            if (new_course != "") {
+                                add-course(new_course);
+                                new_course = "";
+                            }
+                        }
+                    }
+                }
+
+                ListView {
+                    width: 510px;
+                    for course[index] in selected_courses: HorizontalBox {
+                        spacing: 10px;
+                        property <string> edit_text: course; // Editable field
+                        LineEdit {
+                            text <=> edit_text; // Two-way binding for editing
+                            width: 300px;
+                            font-size: 16px;
+                        }
+                        Button {
+                            text: "Save";
+                            width: 80px;
+                            clicked => {
+                                edit-course(index, edit_text);
+                            }
+                        }
+                        Button {
+                            text: "Remove";
+                            width: 80px;
+                            clicked => {
+                                remove-course(index, course);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Day-Off Preferences Section
+            VerticalBox {
+                spacing: 10px;
+                Text {
+                    text: "Day-Off Preferences";
+                    font-size: 20px;
+                    horizontal-alignment: center;
+                    color: #ffffff;
+                }
+                HorizontalBox {
+                    spacing: 20px;
+                    CheckBox {
+                        checked <=> any_day_off_checked;
+                        text: "Any Day Off";
+                        toggled => {
+                            if (self.checked) {
+                                any_day_off_checked = true;
+                                is_specific_day_off = false;
+                                day_off_preference = "Any";
+                                specific_day_off = "";
+                            } else {
+                                day_off_preference = "None";
+                            }
+                        }
+                    }
+                    CheckBox {
+                        checked <=> is_specific_day_off;
+                        text: "Specific Day Off";
+                        toggled => {
+                            if (self.checked) {
+                                is_specific_day_off = true;
+                                any_day_off_checked = false;
+                                day_off_preference = "Specific";
+                            } else {
+                                day_off_preference = "None";
+                            }
+                        }
+                    }
+                }
+
+                if (day_off_preference == "Specific"): ComboBox {
+                    model: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+                    current-value <=> specific_day_off;
+                    width: 200px;
+                }
+            }
+
+            // Submit Button
+            Button {
+                text: "Submit Registration";
+                width: 200px;
+                clicked => {
+                    if (selected_term != "" && selected_courses.length > 0) {
+                        debug("Registration submitted: Term=" + selected_term + ", Courses=" + selected_courses.length + ", Day Off=" + day_off_preference + (day_off_preference == "Specific" ? ", Day=" + specific_day_off : ""));
+                    }
+                }
+            }
+        }
+    }
+}
