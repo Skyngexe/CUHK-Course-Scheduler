@@ -1,6 +1,6 @@
 <div align="center">
 
-# CUHK Course Scheduler
+# CUHKScheduler
 
 <div align="center">
 <img src="https://raw.githubusercontent.com/marwin1991/profile-technology-icons/main/icons/rust.png" alt="Rust Logo" width="70"/>
@@ -10,7 +10,7 @@
 </div>
 
 
-CUHK Course Scheduler is a ***cross-platform desktop application*** designed to simplify course scheduling for CUHK students. This lightweight desktop app automates course data retrieval from the CUSIS portal, generates a range of optimized, conflict-free schedules, and adds courses directly to your shopping cart. 
+CUHKScheduler is a ***cross-platform desktop application*** designed to simplify course scheduling for CUHK students. This lightweight desktop app automates course data retrieval from the CUSIS portal, generates a range of optimized, conflict-free schedules, and adds courses directly to your shopping cart. 
 
 ## 🌟 Why I Built CUHKScheduler
 Manually scheduling courses on the CUSIS portal was a hassle that ate up hours each semester. 
